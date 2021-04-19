@@ -43,6 +43,9 @@ class Play extends Phaser.Scene {
             frameRate: 30
         });
 
+        // initialize score
+        this.p1Score = 0;
+
         // display score
         let scoreConfig = {
             fontFamily: 'Courier',
