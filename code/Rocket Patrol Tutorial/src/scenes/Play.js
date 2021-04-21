@@ -3,14 +3,18 @@ class Play extends Phaser.Scene {
         super("playScene");
     }
 
+
     preload() {
         // load images/tile sprites
         this.load.image('rocket', './assets/rocket.png');
         this.load.image('spaceship', './assets/spaceship.png');
+        this.load.image('fighter','./assets/fighter.png');
         this.load.image('starfield', './assets/starfield.png');
+        this.load.image('fire', './assets/muzzleflash2.png');
 
         // load spritesheet
         this.load.spritesheet('explosion', './assets/explosion.png', {frameWidth: 64, frameHeight: 32, startFrame: 0, endFrame: 9});
+        this.load.spritesheet('fexplosion', './assets/fexplosion.png', {frameWidth: 32, frameHeight: 16, startFrame: 0, endFrame: 9});
     }
 
     create() {
@@ -31,6 +35,7 @@ class Play extends Phaser.Scene {
         this.ship01 = new Spaceship(this, game.config.width + borderUISize * 6, borderUISize * 4, 'spaceship', 0, 30).setOrigin(0, 0);
         this.ship02 = new Spaceship(this, game.config.width + borderUISize * 3, borderUISize * 5 + borderPadding * 2, 'spaceship', 0, 20).setOrigin(0,0);
         this.ship03 = new Spaceship(this, game.config.width, borderUISize * 6 + borderPadding * 4, 'spaceship', 0, 10).setOrigin(0,0);
+        this.fighter = new Fighter(this, game.config.width + borderUISize * 5, borderUISize * 3,  'fighter', 0, 60).setOrigin(0,0);
 
         // defining the keys
         keyA = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A);
@@ -47,6 +52,13 @@ class Play extends Phaser.Scene {
             frames: this.anims.generateFrameNumbers('explosion', { start: 0, end: 9, first: 0}),
             frameRate: 30
         });
+
+        this.anims.create({
+            key: 'fexplode',
+            frames: this.anims.generateFrameNumbers('fexplosion', { start: 0, end: 9, first: 0})
+        })
+
+        this.particles = this.add.particles('fire');
 
         // initialize score
         this.p1Score = 0;
@@ -106,6 +118,7 @@ class Play extends Phaser.Scene {
             this.ship01.update();               // update spaceships (x3)
             this.ship02.update();
             this.ship03.update();        
+            this.fighter.update();
         }
         
         // check collisions
@@ -121,6 +134,10 @@ class Play extends Phaser.Scene {
             this.p1Rocket.reset();
             this.shipExplode(this.p1Rocket,this.ship01);
         }
+        if (this.checkCollision(this.p1Rocket, this.fighter)) {
+            this.p1Rocket.reset();
+            this.shipExplode(this.p1Rocket,this.fighter);
+        }
 
         if(this.checkCollision(this.p2Rocket, this.ship03)) {
             this.p2Rocket.reset();
@@ -134,6 +151,11 @@ class Play extends Phaser.Scene {
             this.p2Rocket.reset();
             this.shipExplode(this.p2Rocket,this.ship01);
         }
+        if (this.checkCollision(this.p2Rocket, this.fighter)) {
+            this.p2Rocket.reset();
+            this.shipExplode(this.p2Rocket,this.fighter);
+        }
+
         var currentTime = game.settings.gameTimer/1000.0 - this.clock.getElapsedSeconds();
         this.displayClock.text = currentTime;
         if(typeof(this.timer) != "undefined") {
@@ -153,15 +175,62 @@ class Play extends Phaser.Scene {
     shipExplode(rocket, ship) {
         // temporarily hide ship
         ship.alpha = 0;
-        // create explosion sprite at ship's position
-        let boom = this.add.sprite(ship.x, ship.y, 'explosion').setOrigin(0,0);
-        boom.anims.play('explode');             // play explosion animation
-        boom.on('animationcomplete', () => {    // callback after anim completes
-            ship.reset();                       // reset ship position
-            ship.alpha = 1;                     // make ship visible again
-            boom.destroy();                     // remove explosion sprite
+        if (ship.moveSpeed == game.settings.spaceshipSpeed) {
+            // create explosion sprite at ship's position
+            let boom = this.add.sprite(ship.x, ship.y, 'explosion').setOrigin(0,0);
+            boom.anims.play('explode');             // play explosion animation
+            boom.on('animationcomplete', () => {    // callback after anim completes
+                ship.reset();                       // reset ship position
+                ship.alpha = 1;                     // make ship visible again
+                boom.destroy();                     // remove explosion sprite
 
-        });
+            });
+
+            this.particles.createEmitter({
+                alpha: { start: 1, end: 0 },
+                scale: { start: 0.5, end: 2.5 },
+                //tint: { start: 0xff945e, end: 0xff945e },
+                speed: 2,
+                accelerationY: -60,
+                angle: { min: -40, max: -130 },
+                rotate: { min: -180, max: 180 },
+                lifespan: { min: 1000, max: 1100 },
+                blendMode: 'ADD',
+                frequency: 110,
+                maxParticles: 10,
+                x: ship.x,
+                y: ship.y
+            });
+        }
+
+        if (ship.moveSpeed == game.settings.fighterSpeed) {
+            // create explosion sprite at ship's position
+            let boom = this.add.sprite(ship.x, ship.y, 'fexplosion').setOrigin(0,0);
+            boom.anims.play('fexplode');             // play explosion animation
+            boom.on('animationcomplete', () => {    // callback after anim completes
+                ship.reset();                       // reset ship position
+                ship.alpha = 1;                     // make ship visible again
+                boom.destroy();                     // remove explosion sprite
+
+            });
+
+            this.particles.createEmitter({
+                alpha: { start: 1, end: 0 },
+                scale: { start: 0.25, end: 1.25 },
+                //tint: { start: 0xff945e, end: 0xff945e },
+                speed: 2,
+                accelerationY: -60,
+                angle: { min: -40, max: -130 },
+                rotate: { min: -180, max: 180 },
+                lifespan: { min: 1000, max: 1100 },
+                blendMode: 'ADD',
+                frequency: 110,
+                maxParticles: 10,
+                x: ship.x,
+                y: ship.y
+            });
+        }
+        
         
         // score add and repaint
         if(rocket.player == "P1"){
