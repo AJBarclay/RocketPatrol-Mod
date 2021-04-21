@@ -8,6 +8,7 @@
 // Total: 30 + 20 + 20 + 20 + 10 = 100
 
 // Credits
+// Based on Rocket Patrol Tutorial by Nathan Altice from: http://ex-artist.com/CMPM120/Tutorials/Phaser%203%20Rocket%20Patrol%20Tutorial.html
 // Particle emitter example followed from: https://phaser.io/examples/v3/view/game-objects/particle-emitter/fire-max-10-particles
 // Particle image resized from: https://raw.githubusercontent.com/photonstorm/phaser3-examples/master/public/assets/particles/muzzleflash2.png
 // Advice on adding parameter to Rocket to make use of in distinguishing p1 from p2 in making simultaneous multiplayer from Ethan Jung, teammate, verbal description of strategy over Discord
