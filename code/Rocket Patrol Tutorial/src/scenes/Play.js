@@ -69,11 +69,14 @@ class Play extends Phaser.Scene {
         
         this.scoreLeft = this.add.text(borderUISize + borderPadding, borderUISize + borderPadding * 2, this.p1Score, scoreConfig);
         this.scoreRight = this.add.text(borderUISize * 15.25 + borderPadding, borderUISize + borderPadding * 2, this.p2Score, scoreConfig);
+        this.displayClock = this.add.text(borderUISize * 7.625 + borderPadding, borderUISize + borderPadding * 2, game.settings.gameTimer, scoreConfig);
+        this.displayBonus = this.add.text(borderUISize * 12 + borderPadding, borderUISize + borderPadding * 2, 'Bonus', scoreConfig);
         
         // GAME OVER flag
         this.gameOver = false;
 
         // 60-second play clock
+        
         scoreConfig.fixedWidth = 0;
         this.clock = this.time.delayedCall(game.settings.gameTimer, () => {
             this.add.text(game.config.width/2, game.config.height/2, 'GAME OVER', scoreConfig).setOrigin(0.5);
@@ -131,6 +134,11 @@ class Play extends Phaser.Scene {
             this.p2Rocket.reset();
             this.shipExplode(this.p2Rocket,this.ship01);
         }
+        var currentTime = game.settings.gameTimer/1000.0 - this.clock.getElapsedSeconds();
+        this.displayClock.text = currentTime;
+        if(typeof(this.timer) != "undefined") {
+            this.displayBonus.text = (this.timer.delay - this.timer.getElapsed())/ 1000.0;
+        }
     }
 
     checkCollision(rocket, ship) {
@@ -165,6 +173,22 @@ class Play extends Phaser.Scene {
             this.p2Score += ship.points;
             this.scoreRight.text = this.p2Score;
         }
+        if(this.clock.paused == false) {
+            this.clock.paused = true;
+        
+            this.timer = this.time.delayedCall(ship.points * 1000.0, () => {
+    
+                this.clock.paused = false;
+            }, null, this);
+        } else {
+            var remainder = this.timer.delay - this.timer.getElapsed();
+            this.timer.remove(false);
+            this.timer = this.time.delayedCall(ship.points * 1000.0 + remainder, () => {
+    
+                this.clock.paused = false;
+            }, null, this);
+        }
+        
         
         
         this.sound.play('sfx_explosion');       // explosion sound effect
